@@ -1,26 +1,32 @@
-import { FormEvent } from 'react'
-
-type MyFormEvent = FormEvent<HTMLFormElement> & {
-  currentTarget: {
-    username?: HTMLInputElement
-    elements: {
-      username?: HTMLInputElement
-    }
-  }
-}
+import { ChangeEvent, useState } from 'react'
 
 export function Events () {
-  const handleSubmit = (e: MyFormEvent) => {
-    e.preventDefault()
-    const u = 'username'
-    console.log(e.currentTarget.elements[u]?.value)
+  const [cpf, setCpf] = useState('')
+
+  const handleChangeCpf = (e: ChangeEvent<HTMLInputElement>) => {
+    setCpf(maskCpf(e.target.value))
+  }
+
+  const maskCpf = (value: string) => {
+    return value
+      .replace(/\D+/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1')
   }
 
   return (
     <>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor='username'>Username:</label>
-        <input type='text' name='username' id='username' />
+      <form>
+        <label htmlFor='username'>CPF:</label>
+        <input
+          type='text'
+          name='cpf'
+          id='cpf'
+          value={cpf}
+          onChange={handleChangeCpf}
+        />
         <button type='submit'>Enviar</button>
       </form>
     </>
