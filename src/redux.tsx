@@ -1,65 +1,5 @@
 import { useReducer } from 'react'
 
-type State = number
-
-interface CounterAction {
-  type: 'INCREMENT' | 'DECREMENT'
-  payload: {
-    value: number
-  }
-}
-
-export function Redux () {
-  // const [counter, dispatch] = useReducer(counterReducer, initialState)
-  const [movies, dispatchMovies] = useReducer(moviesReducer, initialMoviesState)
-
-  return (
-    <>
-      <h1>Redux</h1>
-      <ul>
-        {movies.map(movie => (
-          <li key={movie.id}>
-            {movie.name}
-            <button onClick={() => {
-              dispatchMovies({
-                type: 'REMOVE',
-                payload: { id: movie.id },
-              })
-            }}
-            >
-              Remover
-            </button>
-          </li>
-        ))}
-      </ul>
-      <button onClick={() => {
-        dispatchMovies({
-          type: 'ADD',
-          payload: { name: 'New movie' + Math.random() },
-        })
-      }}
-      >
-        +
-      </button>
-    </>
-  )
-}
-
-// reducer
-const initialState: State = 0
-
-function counterReducer (state: State, action: CounterAction): State {
-  if (action.type === 'DECREMENT') {
-    return action.payload.value
-  }
-
-  if (action.type === 'INCREMENT') {
-    return action.payload.value
-  }
-
-  return state
-}
-
 interface MovieState {
   id: number
   name: string
@@ -83,7 +23,71 @@ interface MoviesActionRemove {
 
 type MoviesAction = MoviesActionAdd | MoviesActionRemove
 
+type State = number
+
+interface MainState {
+  counter: State,
+  movies: MoviesState,
+}
+
+interface CounterAction {
+  type: 'INCREMENT' | 'DECREMENT'
+}
+
+type MainAction<C, M> = C | M
+
+const initialState: State = 0
 const initialMoviesState: MoviesState = []
+
+function mainReducer <C = CounterAction, M = MoviesAction> (state: MainState, action: MainAction<C, M>) {
+  return {
+    counter: counterReducer(state.counter, action),
+    movies: moviesReducer(state.movies, action),
+  }
+}
+
+const mainInitialState = {
+  counter: initialState,
+  movies: initialMoviesState,
+}
+
+export function Redux () {
+  // const [counter, dispatchCounter] = useReducer(counterReducer, initialState)
+  // const [movies, dispatchMovies] = useReducer(moviesReducer, initialMoviesState)
+  const [store, dispatch] = useReducer(mainReducer, mainInitialState)
+
+  return (
+    <>
+      <h1 onClick={() => dispatch({ type: 'INCREMENT' })}>Redux: {store.counter}</h1>
+      <ul>
+        {store.movies.map(movie => (
+          <li key={movie.id}>
+            {movie.name}
+            <button onClick={() => dispatch(remove(movie.id))}>
+              Remover
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button onClick={() => dispatch(add('New movie' + Math.random()))}>
+        +
+      </button>
+    </>
+  )
+}
+
+
+function counterReducer (state: State, action: CounterAction): State {
+  if (action.type === 'DECREMENT') {
+    return state - 1
+  }
+
+  if (action.type === 'INCREMENT') {
+    return state + 1
+  }
+
+  return state
+}
 
 function moviesReducer (
   state: MoviesState = initialMoviesState,
@@ -100,4 +104,18 @@ function moviesReducer (
     return state.filter(movie => movie.id !== action.payload.id)
   }
   return state
+}
+
+function add (name: string): MoviesActionAdd {
+  return {
+    type: 'ADD',
+    payload: { name },
+  }
+}
+
+function remove (id: number): MoviesActionRemove {
+  return {
+    type: 'REMOVE',
+    payload: { id },
+  }
 }
