@@ -16,6 +16,7 @@ interface CounterAction {
   type: 'INCREMENT' | 'DECREMENT'
 }
 
+// reducer
 const initialState: State = {
   value: 0,
 }
@@ -32,12 +33,7 @@ function counterReducer (state: State = initialState, action: CounterAction): St
   return state
 }
 
-// Redux
-function createStore () {
-
-}
-// /Redux
-
+// actions
 function increment (): CounterAction {
   return { type: 'INCREMENT' }
 }
@@ -46,10 +42,48 @@ function decrement (): CounterAction {
   return { type: 'DECREMENT' }
 }
 
-console.log('initialState:', initialState)
-const newState = counterReducer(initialState, increment())
-console.log('newState:', newState)
-const newState2 = counterReducer(newState, increment())
-console.log('newState2:', newState2)
-const newState3 = counterReducer(newState2, decrement())
-console.log('newState3:', newState3, newState, newState2)
+// Redux
+interface DefaultAction<A> {
+  type: A
+}
+
+type SubscribeFn = () => void
+type ReducerFn <T, A> = (state: T | undefined, action: DefaultAction<A>) => T
+
+function createStore <T, A> (reducer: ReducerFn<T, A>) {
+  const listeners: SubscribeFn[] = []
+  let state: T = reducer(undefined, { type: '@INITIAL' })
+
+  const dispatch = (action: DefaultAction<A>) => {
+    state = reducer(state, action)
+    listeners.forEach(f => f())
+  }
+
+  const subscribe = (fn: SubscribeFn) => {
+    listeners.push(fn)
+  }
+
+  const getState = () => state
+
+  return {
+    dispatch,
+    subscribe,
+    getState,
+  }
+}
+// /Redux
+
+const store = createStore(counterReducer)
+console.log('store:', store)
+
+store.subscribe(() => {
+  console.log('quando o evento disparar, vc verá esse console.log', store.getState())
+})
+
+store.subscribe(() => {
+  console.log('esse é um outro evento', store.getState())
+})
+
+console.log('estado inicial da store:', store.getState())
+store.dispatch(increment())
+store.dispatch(decrement())
