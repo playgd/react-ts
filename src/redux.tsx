@@ -1,89 +1,103 @@
 import { useReducer } from 'react'
 
+type State = number
+
+interface CounterAction {
+  type: 'INCREMENT' | 'DECREMENT'
+  payload: {
+    value: number
+  }
+}
+
 export function Redux () {
+  // const [counter, dispatch] = useReducer(counterReducer, initialState)
+  const [movies, dispatchMovies] = useReducer(moviesReducer, initialMoviesState)
+
   return (
     <>
       <h1>Redux</h1>
+      <ul>
+        {movies.map(movie => (
+          <li key={movie.id}>
+            {movie.name}
+            <button onClick={() => {
+              dispatchMovies({
+                type: 'REMOVE',
+                payload: { id: movie.id },
+              })
+            }}
+            >
+              Remover
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button onClick={() => {
+        dispatchMovies({
+          type: 'ADD',
+          payload: { name: 'New movie' + Math.random() },
+        })
+      }}
+      >
+        +
+      </button>
     </>
   )
 }
 
-interface State {
-  value: number
-}
-
-interface CounterAction {
-  type: 'INCREMENT' | 'DECREMENT'
-}
-
 // reducer
-const initialState: State = {
-  value: 0,
-}
+const initialState: State = 0
 
-function counterReducer (state: State = initialState, action: CounterAction): State {
+function counterReducer (state: State, action: CounterAction): State {
   if (action.type === 'DECREMENT') {
-    return { value: state.value - 1 }
+    return action.payload.value
   }
 
   if (action.type === 'INCREMENT') {
-    return { value: state.value + 1 }
+    return action.payload.value
   }
 
   return state
 }
 
-// actions
-function increment (): CounterAction {
-  return { type: 'INCREMENT' }
+interface MovieState {
+  id: number
+  name: string
 }
 
-function decrement (): CounterAction {
-  return { type: 'DECREMENT' }
-}
+type MoviesState = MovieState[]
 
-// Redux
-interface DefaultAction<A> {
-  type: A
-}
-
-type SubscribeFn = () => void
-type ReducerFn <T, A> = (state: T | undefined, action: DefaultAction<A>) => T
-
-function createStore <T, A> (reducer: ReducerFn<T, A>) {
-  const listeners: SubscribeFn[] = []
-  let state: T = reducer(undefined, { type: '@INITIAL' })
-
-  const dispatch = (action: DefaultAction<A>) => {
-    state = reducer(state, action)
-    listeners.forEach(f => f())
-  }
-
-  const subscribe = (fn: SubscribeFn) => {
-    listeners.push(fn)
-  }
-
-  const getState = () => state
-
-  return {
-    dispatch,
-    subscribe,
-    getState,
+interface MoviesActionAdd {
+  type: 'ADD'
+  payload: {
+    name: string
   }
 }
-// /Redux
 
-const store = createStore(counterReducer)
-console.log('store:', store)
+interface MoviesActionRemove {
+  type: 'REMOVE'
+  payload: {
+    id: number
+  }
+}
 
-store.subscribe(() => {
-  console.log('quando o evento disparar, vc verá esse console.log', store.getState())
-})
+type MoviesAction = MoviesActionAdd | MoviesActionRemove
 
-store.subscribe(() => {
-  console.log('esse é um outro evento', store.getState())
-})
+const initialMoviesState: MoviesState = []
 
-console.log('estado inicial da store:', store.getState())
-store.dispatch(increment())
-store.dispatch(decrement())
+function moviesReducer (
+  state: MoviesState = initialMoviesState,
+  action: MoviesAction,
+): MoviesState {
+  if (action.type === 'ADD') {
+    return state.concat({
+      id: state.length,
+      name: action.payload.name,
+    })
+  }
+
+  if (action.type === 'REMOVE') {
+    return state.filter(movie => movie.id !== action.payload.id)
+  }
+  return state
+}
