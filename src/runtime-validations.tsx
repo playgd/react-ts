@@ -4,7 +4,7 @@ import { getUser } from '@/api/get-users'
 export function RuntimeValidations () {
   useEffect(() => {
     getUser('fdaciuk')
-      .then(user => console.log('user:', user))
+      .then(user => console.log('user:', user.arroz))
       .catch(error => console.log('error:', error))
   }, [])
 

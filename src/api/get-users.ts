@@ -1,4 +1,5 @@
 import localforage from 'localforage'
+import { z } from 'zod'
 
 // Cuidado: essa chave não pode ser pública. Está aqui somente para facilitar
 // os exemplos. Para usar corretamente a API do GitHub, você deveria
@@ -7,30 +8,27 @@ import localforage from 'localforage'
 // e pega as informações.
 const githubToken = import.meta.env.VITE_GITHUB_API_TOKEN ?? ''
 
-type UserData = {
-  id: number
-  bio: string
-  avatar_url: string
-}
+const userDataSchema = z.object({
+  id: z.number(),
+  arroz: z.string(),
+  avatar_url: z.string(),
+})
+
+type UserData = z.infer<typeof userDataSchema>
 
 export async function getUser (user: string): Promise<UserData> {
   const userData = await getUserFromCacheOrSource(user)
-  if (isUser(userData)) {
-    return userData
+  try {
+    return userDataSchema.parse(userData)
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      // verificar se zod tem algum parser para as mensagens de erro
+      const parsedError = JSON.parse(e.message)
+      console.log('e:', parsedError)
+    }
+
+    throw new Error('Invalid schema')
   }
-
-  throw new Error('Invalid user data')
-}
-
-function isUser (userData: any): userData is UserData {
-  return typeof userData === 'object' &&
-    userData !== null &&
-    'bio' in userData &&
-    typeof userData.bio === 'string' &&
-    'avatar_url' in userData &&
-    typeof userData.avatar_url === 'string' &&
-    'id' in userData &&
-    typeof userData.id === 'number'
 }
 
 async function getUserFromCacheOrSource (user: string): Promise<unknown> {
