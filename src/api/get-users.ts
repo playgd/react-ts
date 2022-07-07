@@ -10,7 +10,8 @@ const githubToken = import.meta.env.VITE_GITHUB_API_TOKEN ?? ''
 
 const userDataSchema = z.object({
   id: z.number(),
-  arroz: z.string(),
+  bio: z.string(),
+  // arroz: z.string(),
   avatar_url: z.string(),
 })
 
@@ -18,17 +19,13 @@ type UserData = z.infer<typeof userDataSchema>
 
 export async function getUser (user: string): Promise<UserData> {
   const userData = await getUserFromCacheOrSource(user)
-  try {
-    return userDataSchema.parse(userData)
-  } catch (e) {
-    if (e instanceof z.ZodError) {
-      // verificar se zod tem algum parser para as mensagens de erro
-      const parsedError = JSON.parse(e.message)
-      console.log('e:', parsedError)
-    }
+  const result = userDataSchema.safeParse(userData)
 
-    throw new Error('Invalid schema')
+  if (result.success === false) {
+    throw new Error(`Invalid schema ${JSON.stringify(result.error.issues)}`)
   }
+
+  return result.data
 }
 
 async function getUserFromCacheOrSource (user: string): Promise<unknown> {
@@ -44,13 +41,16 @@ async function getUserFromCacheOrSource (user: string): Promise<unknown> {
 
 async function getUserFromGitHub (user: string): Promise<unknown> {
   console.log('vai buscar', user, 'no GitHub')
-  return fetch(`https://api.github.com/users/${user}`, {
+  const data = await fetch(`https://api.github.com/users/${user}`, {
     headers: {
       authorization: `token ${githubToken}`,
       accept: 'application/vnd.github.v3+json',
     },
   })
     .then(r => r.json())
+
+  console.log('github data:', data)
+  return data
 }
 
 async function getDataFromCache (user: string): Promise<unknown> {
