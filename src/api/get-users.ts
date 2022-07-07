@@ -10,19 +10,29 @@ const githubToken = import.meta.env.VITE_GITHUB_API_TOKEN ?? ''
 
 const userDataSchema = z.object({
   id: z.number(),
-  bio: z.string(),
-  // arroz: z.string(),
+  // bio: z.string(),
+  arroz: z.string(),
   avatar_url: z.string(),
 })
 
 type UserData = z.infer<typeof userDataSchema>
+
+export class ValidationError extends Error {
+  issues: string[]
+
+  constructor (issues: string) {
+    super(`Invalid schema: ${issues}`)
+    this.name = 'ValidationError'
+    this.issues = JSON.parse(issues)
+  }
+}
 
 export async function getUser (user: string): Promise<UserData> {
   const userData = await getUserFromCacheOrSource(user)
   const result = userDataSchema.safeParse(userData)
 
   if (result.success === false) {
-    throw new Error(`Invalid schema ${JSON.stringify(result.error.issues)}`)
+    throw new ValidationError(JSON.stringify(result.error.issues))
   }
 
   return result.data
